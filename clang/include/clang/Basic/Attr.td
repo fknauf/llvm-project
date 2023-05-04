@@ -4127,3 +4127,17 @@ def ReadOnlyPlacement : InheritableAttr {
   let Subjects = SubjectList<[Record]>;
   let Documentation = [ReadOnlyPlacementDocs];
 }
+
+def UniqueOwning : InheritableAttr , TargetSpecificAttr<TargetItaniumCXXABI> {
+  let Spellings = [CXX11<"", "unique_owning", 201803>];
+  let Subjects = SubjectList<[Var, NonBitField]>;
+  let Documentation = [UniqueOwningDocs];
+  let SimpleHandler = 1;
+}
+
+def SharedOwning : InheritableAttr , TargetSpecificAttr<TargetItaniumCXXABI> {
+  let Spellings = [CXX11<"", "shared_owning", 201803>];
+  let Subjects = SubjectList<[Var, NonBitField]>;
+  let Documentation = [SharedOwningDocs];
+  let SimpleHandler = 1;
+}

@@ -6847,3 +6847,13 @@ def ReadOnlyPlacementDocs : Documentation {
      ``enforce_read_only_placement`` attribute.
   }];
 }
+
+def UniqueOwningDocs: Documentation {
+  let Category = DocCatField;
+  let Content = [{}];
+}
+
+def SharedOwningDocs: Documentation {
+  let Category = DocCatField;
+  let Content = [{}];
+}

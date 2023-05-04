@@ -363,3 +363,6 @@ def : MergeRule<"adjustCallerStackProbeSize">;
 def : MergeRule<"adjustMinLegalVectorWidth">;
 def : MergeRule<"adjustNullPointerValidAttr">;
 def : MergeRule<"setAND<MustProgressAttr>">;
+
+def UniqueOwning: StrBoolAttr<"unique_owning">;
+def SharedOwning: StrBoolAttr<"shared_owning">;

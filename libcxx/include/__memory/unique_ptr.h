@@ -131,7 +131,7 @@ public:
                 "the specified deleter type cannot be an rvalue reference");
 
 private:
-  __compressed_pair<pointer, deleter_type> __ptr_;
+  __compressed_pair<pointer, deleter_type, __compressed_pair_first_elem_ownership::unique> __ptr_;
 
   struct __nat { int __for_bool_; };
 

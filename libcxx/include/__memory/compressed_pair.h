@@ -33,11 +33,19 @@
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
+enum class __compressed_pair_first_elem_ownership {
+  none,
+  unique,
+  shared
+};
+
 // Tag used to default initialize one or both of the pair's elements.
 struct __default_init_tag {};
 struct __value_init_tag {};
 
-template <class _Tp, int _Idx, bool _CanBeEmptyBase = is_empty<_Tp>::value && !__libcpp_is_final<_Tp>::value>
+template <class _Tp, int _Idx,
+  __compressed_pair_first_elem_ownership ownership = __compressed_pair_first_elem_ownership::none,
+  bool _CanBeEmptyBase = is_empty<_Tp>::value && !__libcpp_is_final<_Tp>::value>
 struct __compressed_pair_elem {
   using _ParamT = _Tp;
   using reference = _Tp&;
@@ -65,7 +73,61 @@ private:
 };
 
 template <class _Tp, int _Idx>
-struct __compressed_pair_elem<_Tp, _Idx, true> : private _Tp {
+struct __compressed_pair_elem<_Tp, _Idx, __compressed_pair_first_elem_ownership::unique, false> {
+  using _ParamT = _Tp;
+  using reference = _Tp&;
+  using const_reference = const _Tp&;
+
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR explicit __compressed_pair_elem(__default_init_tag) {}
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR explicit __compressed_pair_elem(__value_init_tag) : __value_() {}
+
+  template <class _Up, class = __enable_if_t<!is_same<__compressed_pair_elem, typename decay<_Up>::type>::value> >
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR
+  explicit __compressed_pair_elem(_Up&& __u) : __value_(std::forward<_Up>(__u)) {}
+
+#ifndef _LIBCPP_CXX03_LANG
+  template <class... _Args, size_t... _Indices>
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX17
+  explicit __compressed_pair_elem(piecewise_construct_t, tuple<_Args...> __args, __tuple_indices<_Indices...>)
+      : __value_(std::forward<_Args>(std::get<_Indices>(__args))...) {}
+#endif
+
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14 reference __get() _NOEXCEPT { return __value_; }
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR const_reference __get() const _NOEXCEPT { return __value_; }
+
+private:
+  [[unique_owning]] _Tp __value_;
+};
+
+template <class _Tp, int _Idx>
+struct __compressed_pair_elem<_Tp, _Idx, __compressed_pair_first_elem_ownership::shared, false> {
+  using _ParamT = _Tp;
+  using reference = _Tp&;
+  using const_reference = const _Tp&;
+
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR explicit __compressed_pair_elem(__default_init_tag) {}
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR explicit __compressed_pair_elem(__value_init_tag) : __value_() {}
+
+  template <class _Up, class = __enable_if_t<!is_same<__compressed_pair_elem, typename decay<_Up>::type>::value> >
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR
+  explicit __compressed_pair_elem(_Up&& __u) : __value_(std::forward<_Up>(__u)) {}
+
+#ifndef _LIBCPP_CXX03_LANG
+  template <class... _Args, size_t... _Indices>
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX17
+  explicit __compressed_pair_elem(piecewise_construct_t, tuple<_Args...> __args, __tuple_indices<_Indices...>)
+      : __value_(std::forward<_Args>(std::get<_Indices>(__args))...) {}
+#endif
+
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR_SINCE_CXX14 reference __get() _NOEXCEPT { return __value_; }
+  _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR const_reference __get() const _NOEXCEPT { return __value_; }
+
+private:
+  [[shared_owning]] _Tp __value_;
+};
+
+template <class _Tp, int _Idx, __compressed_pair_first_elem_ownership ownership>
+struct __compressed_pair_elem<_Tp, _Idx, ownership, true> : private _Tp {
   using _ParamT = _Tp;
   using reference = _Tp&;
   using const_reference = const _Tp&;
@@ -90,8 +152,8 @@ struct __compressed_pair_elem<_Tp, _Idx, true> : private _Tp {
   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR const_reference __get() const _NOEXCEPT { return *this; }
 };
 
-template <class _T1, class _T2>
-class __compressed_pair : private __compressed_pair_elem<_T1, 0>,
+template <class _T1, class _T2, __compressed_pair_first_elem_ownership ownership = __compressed_pair_first_elem_ownership::none>
+class __compressed_pair : private __compressed_pair_elem<_T1, 0, ownership>,
                           private __compressed_pair_elem<_T2, 1> {
 public:
   // NOTE: This static assert should never fire because __compressed_pair
@@ -102,7 +164,7 @@ public:
     "__compressed_pair cannot be instantiated when T1 and T2 are the same type; "
     "The current implementation is NOT ABI-compatible with the previous implementation for this configuration");
 
-  using _Base1 _LIBCPP_NODEBUG = __compressed_pair_elem<_T1, 0>;
+  using _Base1 _LIBCPP_NODEBUG = __compressed_pair_elem<_T1, 0, ownership>;
   using _Base2 _LIBCPP_NODEBUG = __compressed_pair_elem<_T2, 1>;
 
   template <bool _Dummy = true,

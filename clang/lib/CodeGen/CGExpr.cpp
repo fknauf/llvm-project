@@ -4474,32 +4474,24 @@ LValue CodeGenFunction::EmitLValueForField(LValue base,
       // Remember the original struct field index
       addr = emitPreserveStructAccess(*this, base, addr, field);
 
+    auto addValueToListMD = [](llvm::Function *F, llvm::StringRef mdName, llvm::Value *val) {
+      auto &C = val->getContext();
+      auto valueMD = llvm::ValueAsMetadata::get(val);
+      auto valueNode = llvm::MDNode::get(C, valueMD);
+
+      auto ownersMD = F->getMetadata(mdName);
+
+      if(ownersMD == nullptr) {
+        F->addMetadata(mdName, *valueNode);
+      } else {
+        F->setMetadata(mdName, llvm::MDNode::concatenate(ownersMD, valueNode));
+      }
+    };
+
     if(field->hasAttr<UniqueOwningAttr>()) {
-      auto &C = addr.getPointer()->getContext();
-      auto MD = llvm::MDNode::get(C, llvm::MDString::get(C, "unique"));
-
-      auto gep = dyn_cast<llvm::GetElementPtrInst>(addr.getPointer());
-
-      if(gep) {
-        gep->setMetadata("fknauf.ownership", MD);
-      } else {
-        llvm::errs() << "unique owning struct access emitted something other than GEP\n";
-        llvm::errs() 
-          << base.getType().getAsString() << "." << field->getNameAsString() << "\n";
-      }
+      addValueToListMD(CurFn, "fknauf.owners.unique", addr.getPointer());
     } else if(field->hasAttr<SharedOwningAttr>()) {
-      auto &C = addr.getPointer()->getContext();
-      auto MD = llvm::MDNode::get(C, llvm::MDString::get(C, "shared"));
-
-      auto gep = dyn_cast<llvm::GetElementPtrInst>(addr.getPointer());
-
-      if(gep) {
-        gep->setMetadata("fknauf.ownership", MD);
-      } else {
-        llvm::errs() << "shared owning struct access emitted something other than GEP\n";
-        llvm::errs() 
-          << base.getType().getAsString() << "." << field->getNameAsString() << "\n";
-      }
+      addValueToListMD(CurFn, "fknauf.owners.shared", addr.getPointer());
     }
   }
 

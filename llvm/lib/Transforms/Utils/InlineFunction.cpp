@@ -1338,6 +1338,48 @@ static void AddAliasScopeMetadata(CallBase &CB, ValueToValueMapTy &VMap,
   }
 }
 
+static void TransferOwnershipMetadata(Function *Caller, 
+                                      Function *CalledFunc, 
+                                      ValueToValueMapTy &VMap,
+                                      StringRef mdName) {
+
+  auto innerOwners = CalledFunc->getMetadata(mdName);
+  auto outerOwners = Caller->getMetadata(mdName);
+
+  if(innerOwners == nullptr) {
+    return;
+  }
+
+  MDNode *newOuterOwners = nullptr;
+
+  for(auto &&inner : innerOwners->operands()) {
+    assert(isa<ValueAsMetadata>(inner));
+     
+    auto innerValue = dyn_cast<ValueAsMetadata>(inner)->getValue();
+    auto outerValue = VMap[innerValue];
+
+    assert(outerValue != nullptr);
+
+    auto outerValueMD = llvm::ValueAsMetadata::get(outerValue);
+    auto outerValueNode = llvm::MDNode::get(outerValue->getContext(), outerValueMD);
+
+    newOuterOwners = MDNode::concatenate(newOuterOwners, outerValueNode);
+  }
+
+  if(outerOwners == nullptr) {
+    Caller->addMetadata(mdName, *newOuterOwners);
+  } else {
+    Caller->setMetadata(mdName, MDNode::concatenate(outerOwners, newOuterOwners));
+  }
+}
+
+static void TransferOwnershipMetadata(Function *Caller, 
+                                      Function *Callee, 
+                                      ValueToValueMapTy &VMap) {
+  TransferOwnershipMetadata(Caller, Callee, VMap, "fknauf.owners.unique");
+  TransferOwnershipMetadata(Caller, Callee, VMap, "fknauf.owners.shared");
+}
+
 static bool MayContainThrowingOrExitingCall(Instruction *Begin,
                                             Instruction *End) {
 
@@ -2218,6 +2260,8 @@ llvm::InlineResult llvm::InlineFunction(CallBase &CB, InlineFunctionInfo &IFI,
                               &InlinedFunctionInfo);
     // Remember the first block that is newly cloned over.
     FirstNewBlock = LastBlock; ++FirstNewBlock;
+
+    TransferOwnershipMetadata(Caller, CalledFunc, VMap);
 
     // Insert retainRV/clainRV runtime calls.
     objcarc::ARCInstKind RVCallKind = objcarc::getAttachedARCFunctionKind(&CB);

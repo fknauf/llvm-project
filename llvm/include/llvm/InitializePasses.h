@@ -300,6 +300,7 @@ void initializeNewGVNLegacyPassPass(PassRegistry&);
 void initializeObjCARCContractLegacyPassPass(PassRegistry &);
 void initializeOptimizationRemarkEmitterWrapperPassPass(PassRegistry&);
 void initializeOptimizePHIsPass(PassRegistry&);
+void initializeOwnershipAAWrapperPassPass(PassRegistry&);
 void initializePEIPass(PassRegistry&);
 void initializePHIEliminationPass(PassRegistry&);
 void initializePartialInlinerLegacyPassPass(PassRegistry&);
@@ -418,7 +419,6 @@ void initializeWasmEHPreparePass(PassRegistry&);
 void initializeWinEHPreparePass(PassRegistry&);
 void initializeWriteBitcodePassPass(PassRegistry&);
 void initializeXRayInstrumentationPass(PassRegistry&);
-
 } // end namespace llvm
 
 #endif // LLVM_INITIALIZEPASSES_H

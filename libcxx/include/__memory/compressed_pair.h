@@ -96,7 +96,7 @@ struct __compressed_pair_elem<_Tp, _Idx, __compressed_pair_first_elem_ownership:
   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR const_reference __get() const _NOEXCEPT { return __value_; }
 
 private:
-  [[unique_owning]] _Tp __value_;
+  [[clang::annotate("fknauf.owner.unique")]] _Tp __value_;
 };
 
 template <class _Tp, int _Idx>
@@ -123,7 +123,7 @@ struct __compressed_pair_elem<_Tp, _Idx, __compressed_pair_first_elem_ownership:
   _LIBCPP_HIDE_FROM_ABI _LIBCPP_CONSTEXPR const_reference __get() const _NOEXCEPT { return __value_; }
 
 private:
-  [[shared_owning]] _Tp __value_;
+  [[clang::annotate("fknauf.owner.shared")]] _Tp __value_;
 };
 
 template <class _Tp, int _Idx, __compressed_pair_first_elem_ownership ownership>

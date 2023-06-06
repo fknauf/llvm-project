@@ -668,7 +668,7 @@ public:
 #endif // _LIBCPP_ENABLE_DEBUG_MODE
 
 private:
-    [[unique_owning]] pointer __begin_ = nullptr;
+    [[clang::annotate("fknauf.owner.unique")]] pointer __begin_ = nullptr;
     pointer __end_ = nullptr;
     __compressed_pair<pointer, allocator_type> __end_cap_ =
         __compressed_pair<pointer, allocator_type>(nullptr, __default_init_tag());

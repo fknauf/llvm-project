@@ -60,6 +60,7 @@
 #include "llvm/Analysis/MustExecute.h"
 #include "llvm/Analysis/ObjCARCAliasAnalysis.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#include "llvm/Analysis/OwnershipBasedAliasAnalysis.h"
 #include "llvm/Analysis/PhiValues.h"
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Analysis/ProfileSummaryInfo.h"

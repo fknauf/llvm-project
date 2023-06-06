@@ -65,7 +65,6 @@ namespace llvm {
 /// Allow disabling BasicAA from the AA results. This is particularly useful
 /// when testing to isolate a single AA implementation.
 cl::opt<bool> DisableBasicAA("disable-basic-aa", cl::Hidden, cl::init(false));
-cl::opt<bool> DisableOwnershipAA("disable-ownership-aa", cl::Hidden, cl::init(false));
 } // namespace llvm
 
 #ifndef NDEBUG
@@ -808,13 +807,8 @@ bool AAResultsWrapperPass::runOnFunction(Function &F) {
     AAR->addAAResult(WrapperPass->getResult());
   if (auto *WrapperPass = getAnalysisIfAvailable<SCEVAAWrapperPass>())
     AAR->addAAResult(WrapperPass->getResult());
-  if (
-      auto *WrapperPass = getAnalysisIfAvailable<OwnershipAAWrapperPass>();
-      !DisableOwnershipAA && WrapperPass != nullptr
-    )
-  {
+  if (auto *WrapperPass = getAnalysisIfAvailable<OwnershipAAWrapperPass>())
     AAR->addAAResult(WrapperPass->getResult());
-  }
 
   // If available, run an external AA providing callback over the results as
   // well.

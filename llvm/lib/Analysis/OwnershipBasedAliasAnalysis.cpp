@@ -9,6 +9,9 @@
 
 using namespace llvm;
 
+static cl::opt<bool> EnableOwnershipAA("enable-ownership-aa",
+                                        cl::init(true), cl::Hidden);
+
 auto OwnershipAACache::clear() -> void {
     ownerAddresses_.clear();
     owningPtrToAddressMap_.clear();
@@ -149,6 +152,10 @@ auto OwnershipAAResult::alias(
 {
     auto upstream = AAResultBase::alias(LocA, LocB, AAQI, CtxI);
 
+    if(!EnableOwnershipAA) {
+        return upstream;
+    }
+
     if(upstream != AliasResult::MayAlias) {
         return upstream;
     }
@@ -187,4 +194,8 @@ INITIALIZE_PASS(OwnershipAAWrapperPass, "ownership-aa", "Ownership-Based Alias A
 
 OwnershipAAWrapperPass::OwnershipAAWrapperPass() : llvm::FunctionPass(ID) {
     llvm::initializeOwnershipAAWrapperPassPass(*llvm::PassRegistry::getPassRegistry());
+}
+
+FunctionPass *llvm::createOwnershipAAWrapperPass() {
+    return new OwnershipAAWrapperPass();
 }

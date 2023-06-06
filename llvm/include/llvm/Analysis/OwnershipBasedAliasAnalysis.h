@@ -78,6 +78,8 @@ namespace llvm {
 
     FunctionPass *createOwnershipAAWrapperPass();
     OwnershipAAResult createLegacyPMOwnershipAAResult(Pass &P, Function &F);
+
+    FunctionPass *createOwnershipAAWrapperPass();
 }
 
 #endif

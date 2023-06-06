@@ -766,6 +766,7 @@ INITIALIZE_PASS_DEPENDENCY(GlobalsAAWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(SCEVAAWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(ScopedNoAliasAAWrapperPass)
 INITIALIZE_PASS_DEPENDENCY(TypeBasedAAWrapperPass)
+INITIALIZE_PASS_DEPENDENCY(OwnershipAAWrapperPass)
 INITIALIZE_PASS_END(AAResultsWrapperPass, "aa",
                     "Function Alias Analysis Results", false, true)
 
@@ -829,6 +830,7 @@ void AAResultsWrapperPass::getAnalysisUsage(AnalysisUsage &AU) const {
   // probe in runOnFunction as used here to ensure the legacy pass manager
   // preserves them. This hard coding of lists of alias analyses is specific to
   // the legacy pass manager.
+  AU.addUsedIfAvailable<OwnershipAAWrapperPass>();
   AU.addUsedIfAvailable<ScopedNoAliasAAWrapperPass>();
   AU.addUsedIfAvailable<TypeBasedAAWrapperPass>();
   AU.addUsedIfAvailable<GlobalsAAWrapperPass>();
@@ -852,6 +854,8 @@ AAResults llvm::createLegacyPMAAResults(Pass &P, Function &F,
     AAR.addAAResult(BAR);
 
   // Populate the results with the other currently available AAs.
+  if (auto *WrapperPass = P.getAnalysisIfAvailable<OwnershipAAWrapperPass>())
+    AAR.addAAResult(WrapperPass->getResult());
   if (auto *WrapperPass =
           P.getAnalysisIfAvailable<ScopedNoAliasAAWrapperPass>())
     AAR.addAAResult(WrapperPass->getResult());
@@ -943,7 +947,9 @@ void llvm::getAAResultsAnalysisUsage(AnalysisUsage &AU) {
   // This function needs to be in sync with llvm::createLegacyPMAAResults -- if
   // more alias analyses are added to llvm::createLegacyPMAAResults, they need
   // to be added here also.
+
   AU.addRequired<TargetLibraryInfoWrapperPass>();
+  AU.addUsedIfAvailable<OwnershipAAWrapperPass>();
   AU.addUsedIfAvailable<ScopedNoAliasAAWrapperPass>();
   AU.addUsedIfAvailable<TypeBasedAAWrapperPass>();
   AU.addUsedIfAvailable<GlobalsAAWrapperPass>();

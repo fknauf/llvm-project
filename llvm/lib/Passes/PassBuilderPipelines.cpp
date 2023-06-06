@@ -20,6 +20,7 @@
 #include "llvm/Analysis/GlobalsModRef.h"
 #include "llvm/Analysis/InlineAdvisor.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#include "llvm/Analysis/OwnershipBasedAliasAnalysis.h"
 #include "llvm/Analysis/ProfileSummaryInfo.h"
 #include "llvm/Analysis/ScopedNoAliasAA.h"
 #include "llvm/Analysis/TypeBasedAliasAnalysis.h"
@@ -1982,6 +1983,7 @@ AAManager PassBuilder::buildDefaultAAPipeline() {
   // information about aliasing.
   AA.registerFunctionAnalysis<ScopedNoAliasAA>();
   AA.registerFunctionAnalysis<TypeBasedAA>();
+  AA.registerFunctionAnalysis<OwnershipAA>();
 
   // Add support for querying global aliasing information when available.
   // Because the `AAManager` is a function analysis and `GlobalsAA` is a module

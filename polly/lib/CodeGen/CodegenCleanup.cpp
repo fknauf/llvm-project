@@ -8,6 +8,7 @@
 
 #include "polly/CodeGen/CodegenCleanup.h"
 
+#include "llvm/Analysis/OwnershipBasedAliasAnalysis.h"
 #include "llvm/Analysis/ScopedNoAliasAA.h"
 #include "llvm/Analysis/TypeBasedAliasAnalysis.h"
 #include "llvm/IR/Function.h"
@@ -50,6 +51,7 @@ public:
     // TODO: How to make parent passes discoverable?
     // TODO: Should be sensitive to compiler options in PassManagerBuilder, to
     // which we do not have access here.
+    FPM->add(createOwnershipAAWrapperPass());
     FPM->add(createScopedNoAliasAAWrapperPass());
     FPM->add(createTypeBasedAAWrapperPass());
     FPM->add(createAAResultsWrapperPass());

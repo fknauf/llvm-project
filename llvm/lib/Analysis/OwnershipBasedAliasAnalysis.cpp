@@ -153,6 +153,7 @@ auto OwnershipAAResult::alias(
     auto upstream = AAResultBase::alias(LocA, LocB, AAQI, CtxI);
 
     if(!EnableOwnershipAA) {
+        llvm::errs() << "ownership aa disabled.\n";
         return upstream;
     }
 
@@ -160,17 +161,29 @@ auto OwnershipAAResult::alias(
         return upstream;
     }
 
-    auto ownerA = unique_.owner(LocA.Ptr);
-    auto ownerB = unique_.owner(LocB.Ptr);
+    auto ownerA = unique_.ownerAddress(LocA.Ptr);
+    auto ownerB = unique_.ownerAddress(LocB.Ptr);
 
     if(ownerA == nullptr || ownerB == nullptr) {
         return upstream;
     }
 
-    auto ownerLocA = MemoryLocation::get(ownerA);
-    auto ownerLocB = MemoryLocation::get(ownerB);
+    auto ownerLocA = MemoryLocation { ownerA, 1 };
+    auto ownerLocB = MemoryLocation { ownerB, 1 };
 
-    return AAResultBase::alias(ownerLocA, ownerLocB, AAQI, CtxI);
+    auto ownerResult = AAQI.AAR.alias(ownerLocA, ownerLocB);
+
+    llvm::errs() << ownerResult << " for ";
+    ownerA->printAsOperand(llvm::errs());
+    llvm::errs() << ", ";
+    ownerB->printAsOperand(llvm::errs());
+    llvm::errs() << "\n";
+
+    if(ownerResult == AliasResult::MustAlias || ownerResult == AliasResult::NoAlias) {
+        return ownerResult;
+    }
+
+    return AAResultBase::alias(LocA, LocB, AAQI, CtxI);
 }
 
 AnalysisKey OwnershipAA::Key;

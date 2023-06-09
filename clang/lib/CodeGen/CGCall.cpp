@@ -2790,6 +2790,32 @@ void CodeGenFunction::EmitFunctionProlog(const CGFunctionInfo &FI,
     unsigned FirstIRArg, NumIRArgs;
     std::tie(FirstIRArg, NumIRArgs) = IRFunctionArgs.getIRArgs(ArgNo);
 
+// fknauf
+//    if(Arg->getName() == "p1_local" || Arg->getName() == "p3_local") {
+//      llvm::errs() 
+//        << "---"
+//        << "\np1_local kind = " << int(ArgI.getKind())
+//        << "\ntype is reference = " << Arg->getType()->isReferenceType()
+//        << "\ntype is pointer type = " << Arg->getType()->isReferenceType()
+//        << "\ntype is object type = " << Arg->getType()->isObjectType() // pointer types are also object types
+//        << "\npromoted type = " << Ty
+//        << "\nscalar evaluation = " << hasScalarEvaluationKind(Ty)
+//        << "\n";
+//
+//      if(ArgI.getKind() == ABIArgInfo::Indirect) {
+//        llvm::errs()
+//          << "realign = " << ArgI.getIndirectRealign()
+//          << "\naliased = " << ArgI.isIndirectAliased()
+//          << "\n";
+//      }
+//
+//      if(Arg->hasAttrs()) {
+//        for(auto &A : Arg->getAttrs()) {
+//          llvm::errs() << A << "\n";
+//        }
+//      }
+//    } 
+
     switch (ArgI.getKind()) {
     case ABIArgInfo::InAlloca: {
       assert(NumIRArgs == 0);
@@ -2829,7 +2855,16 @@ void CodeGenFunction::EmitFunctionProlog(const CGFunctionInfo &FI,
               ParamAddr.getPointer(), ParamAddr.getAlignment().getAsAlign(),
               llvm::ConstantInt::get(IntPtrTy, Size.getQuantity()));
           V = AlignedTemp;
+        } 
+// fknauf
+        else if(Ty.getTypePtr()->isObjectType() && !Ty.getTypePtr()->isAnyPointerType()) {
+          // pass-by-value of complex objects: the newly created object that's
+          // passed in here is not known to anyone else yet.
+          auto AI = Fn->getArg(FirstIRArg);
+          AI->addAttr(llvm::Attribute::NoAlias);
+          AI->addAttr(llvm::Attribute::NonNull);
         }
+
         ArgVals.push_back(ParamValue::forIndirect(V));
       } else {
         // Load scalar value from indirect argument.

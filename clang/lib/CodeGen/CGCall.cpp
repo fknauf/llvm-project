@@ -2855,14 +2855,6 @@ void CodeGenFunction::EmitFunctionProlog(const CGFunctionInfo &FI,
               ParamAddr.getPointer(), ParamAddr.getAlignment().getAsAlign(),
               llvm::ConstantInt::get(IntPtrTy, Size.getQuantity()));
           V = AlignedTemp;
-        } 
-// fknauf
-        else if(Ty.getTypePtr()->isObjectType() && !Ty.getTypePtr()->isAnyPointerType()) {
-          // pass-by-value of complex objects: the newly created object that's
-          // passed in here is not known to anyone else yet.
-          auto AI = Fn->getArg(FirstIRArg);
-          AI->addAttr(llvm::Attribute::NoAlias);
-          AI->addAttr(llvm::Attribute::NonNull);
         }
 
         ArgVals.push_back(ParamValue::forIndirect(V));

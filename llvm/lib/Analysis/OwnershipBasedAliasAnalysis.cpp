@@ -7,6 +7,8 @@
 
 #include <cassert>
 
+//#define OWNERSHIP_AA_DEBUG
+
 using namespace llvm;
 
 static cl::opt<bool> EnableOwnershipAA("enable-ownership-aa",
@@ -19,19 +21,23 @@ auto OwnershipAACache::clear() -> void {
 }
 
 auto OwnershipAACache::harvest(IntrinsicInst const *II) -> void {
+#ifdef OWNERSHIP_AA_DEBUG
     errs() << "---\nowning address: ";
     II->print(errs());
     errs() << "\n";
-    
+#endif
+
     ownerAddresses_.insert(II);
 
     for(auto *U : II->users()) {
         auto LI = dyn_cast<LoadInst>(U);
 
         if(LI != nullptr && LI->getOperand(0) == II) {
+#ifdef OWNERSHIP_AA_DEBUG
             errs() << "owning pointer: ";
             LI->print(errs());
             errs() << "\n";
+#endif
 
             assert(owningPtrToAddressMap_.count(LI) == 0);
             owningPtrToAddressMap_[LI] = II;
@@ -45,6 +51,7 @@ auto OwnershipAACache::harvestDependents(
         LoadInst const *owner
     ) -> void
 {
+#ifdef OWNERSHIP_AA_DEBUG
     if(dependentValuesReverseMap_.count(V) > 0) {
         errs() << "DUPLICATE REVMAP: ";
     } else {
@@ -53,6 +60,7 @@ auto OwnershipAACache::harvestDependents(
 
     V->print(errs());
     errs() << "\n";
+#endif
 
     dependentValuesReverseMap_[V] = owner;
 
@@ -153,7 +161,9 @@ auto OwnershipAAResult::alias(
     auto upstream = AAResultBase::alias(LocA, LocB, AAQI, CtxI);
 
     if(!EnableOwnershipAA) {
+#ifdef OWNERSHIP_AA_DEBUG
         llvm::errs() << "ownership aa disabled.\n";
+#endif
         return upstream;
     }
 
@@ -173,11 +183,13 @@ auto OwnershipAAResult::alias(
 
     auto ownerResult = AAQI.AAR.alias(ownerLocA, ownerLocB);
 
+#ifdef OWNERSHIP_AA_DEBUG
     llvm::errs() << ownerResult << " for ";
     ownerA->printAsOperand(llvm::errs());
     llvm::errs() << ", ";
     ownerB->printAsOperand(llvm::errs());
     llvm::errs() << "\n";
+#endif
 
     if(ownerResult == AliasResult::MustAlias || ownerResult == AliasResult::NoAlias) {
         return ownerResult;
